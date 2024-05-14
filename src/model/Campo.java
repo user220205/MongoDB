@@ -30,9 +30,6 @@ public class Campo {
     @JoinColumn(name = "id_bodega")
     private Bodega bodega;
 
-    @Column(name = "recolectado", columnDefinition = "boolean default false")
-    private boolean recolectado;
-
     public Campo() {}
 
     public Campo(Bodega bodega) {
@@ -54,10 +51,6 @@ public class Campo {
         ArrayList<Vid> vids = new ArrayList<>();
         vids.addAll(this.vids);
         return vids;
-    }
-
-    public void recolected() {
-        this.recolectado = true;
     }
     
     public void setId(String id) {
