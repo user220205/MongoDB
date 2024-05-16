@@ -14,6 +14,10 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.UpdateResult;
+import org.bson.types.ObjectId;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.UpdateResult;
+
 
 import model.Bodega;
 import model.Campo;
@@ -69,6 +73,9 @@ public class Manager {
                     case "V":
                         addVid(entrada.getInstruccion().split(" "));
                         break;
+                        case "M":
+                        markAsVendimiado(entrada.getInstruccion().split(" "));
+                        break;
                     case "#":
                         vendimia();
                         break;
@@ -108,22 +115,24 @@ public class Manager {
         }
     }
     
-    private void addCampo(String[] split) {
-        try {
-            String lastBodegaId = getLastBodegaId(); 
-            Document document = new Document();
-            collection = database.getCollection("campo");
-            collection.insertOne(document);
-            System.out.println("Campo agregado correctamente.");
-            String nuevoCampoId = document.getObjectId("_id").toString();
-            Campo nuevoCampo = new Campo();
-            nuevoCampo.setId(nuevoCampoId);
-            campos.add(nuevoCampo);
-        } catch (Exception e) {
-            System.out.println("Error al agregar el campo: " + e.getMessage());
-            e.printStackTrace();
-        }
+    private void addCampo(String[] split, boolean vendimiado) {
+    try {
+        String lastBodegaId = getLastBodegaId(); 
+        Document document = new Document();
+        document.put("vendimiado", vendimiado); 
+        collection = database.getCollection("campo");
+        collection.insertOne(document);
+        System.out.println("Campo agregado correctamente.");
+        String nuevoCampoId = document.getObjectId("_id").toString();
+        Campo nuevoCampo = new Campo();
+        nuevoCampo.setId(nuevoCampoId);
+        nuevoCampo.setVendimiado(vendimiado);
+        campos.add(nuevoCampo);
+    } catch (Exception e) {
+        System.out.println("Error al agregar el campo: " + e.getMessage());
+        e.printStackTrace();
     }
+}
 
     private String getLastBodegaId() {
         MongoCollection<Document> bodegaCollection = database.getCollection("bodega");  
@@ -174,6 +183,26 @@ public class Manager {
         vidCollection.insertOne(vidDocument);
         System.out.println("Documento de vid agregado correctamente a la colección 'vid'.");
     }
+    private void markAsVendimiado(String[] parts) {
+    if (parts.length >= 2) {
+        String campoId = parts[1];
+        
+        Bson filter = Filters.eq("_id", new ObjectId(campoId));
+        
+        Bson update = Updates.set("vendimiado", true);
+        
+        MongoCollection<Document> campoCollection = database.getCollection("campo");
+        UpdateResult updateResult = campoCollection.updateOne(filter, update);
+        
+        if (updateResult.getModifiedCount() > 0) {
+            System.out.println("Campo marcado como vendimiado correctamente.");
+        } else {
+            System.out.println("No se encontró ningún campo con el ID proporcionado.");
+        }
+    } else {
+        System.out.println("La instrucción no tiene el formato esperado.");
+    }
+}
 
     private void vendimia() {
         String bodegaId = getLastBodegaId();
