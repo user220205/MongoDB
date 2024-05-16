@@ -30,6 +30,9 @@ public class Campo {
     @JoinColumn(name = "id_bodega")
     private Bodega bodega;
 
+    @Column(name = "vendimiado", columnDefinition = "boolean default false")
+    private boolean vendimiado;
+
     public Campo() {}
 
     public Campo(Bodega bodega) {
