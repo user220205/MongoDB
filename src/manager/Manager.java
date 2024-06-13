@@ -1,5 +1,7 @@
 package manager;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,9 +18,6 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.UpdateResult;
 import org.bson.types.ObjectId;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.UpdateResult;
-
-
 import model.Bodega;
 import model.Campo;
 import model.Entrada;
@@ -32,11 +31,14 @@ public class Manager {
     private MongoDatabase database;
     private MongoCollection<Document> collection;
     private ArrayList<Entrada> inputs;
+    private int vendimiaCounter;
 
     private Manager() {
         this.entradas = new ArrayList<>();
         this.campos = new ArrayList<>();
         this.inputs = new ArrayList<>();
+        this.vendimiaCounter = 0; 
+        
     }
 
     public static Manager getInstance() {
@@ -45,7 +47,18 @@ public class Manager {
         }
         return instance;
     }
+    
+    private int getLastVendimiaCounter() {
+        MongoCollection<Document> vendimiasCollection = database.getCollection("vendimias");
+        Document lastVendimia = vendimiasCollection.find().sort(Sorts.descending("counter")).first();
+        if (lastVendimia != null) {
+            return lastVendimia.getInteger("counter", 0);
+        } else {
+            return 0;
+        }
+    }
 
+   
     public void init() {
         createSession();
         getInputData();
@@ -68,13 +81,10 @@ public class Manager {
                     	addBodega(entrada.getInstruccion().split(" "));
                         break;
                     case "C":
-                        addCampo(entrada.getInstruccion().split(" "));
+                        addCampo(entrada.getInstruccion().split(" "), false);
                         break;
                     case "V":
                         addVid(entrada.getInstruccion().split(" "));
-                        break;
-                        case "M":
-                        markAsVendimiado(entrada.getInstruccion().split(" "));
                         break;
                     case "#":
                         vendimia();
@@ -211,5 +221,26 @@ public class Manager {
         Bson update = Updates.set("bodegaId", bodegaId);
         UpdateResult updateResult = vidCollection.updateMany(filter, update);
         System.out.println("Número de documentos de vid actualizados: " + updateResult.getModifiedCount());
+
+    
+        vendimiaCounter++;
+
+
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedDateTime = currentDateTime.format(formatter);
+
+        Document vendimiaDocument = new Document("counter", vendimiaCounter).append("datetime", formattedDateTime);
+
+        MongoCollection<Document> vendimiasCollection = database.getCollection("vendimias");
+        vendimiasCollection.insertOne(vendimiaDocument);
+
+        System.out.println("Vendimia registrada con counter: " + vendimiaCounter + " y datetime: " + formattedDateTime);
+    }
+
+
+        
     }  
-}
+    
+
+

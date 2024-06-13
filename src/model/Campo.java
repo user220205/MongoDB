@@ -59,4 +59,9 @@ public class Campo {
     public void setId(String id) {
         this.id_campo = id;
     }
+
+	public void setVendimiado(boolean vendimiado2) {
+		// TODO Auto-generated method stub
+		
+	}
 }
